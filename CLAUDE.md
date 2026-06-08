@@ -1,17 +1,67 @@
-@AGENTS.md
-# Project: Agentic Frontend Interview Setup
+# Project: Agentic Frontend
 # Stack: Next.js 16, TypeScript, Tailwind CSS
-# Agent: Cline (Claude Sonnet)
+# Agent: Claude Code
 
 ---
 
-## Ground Rules
+## Agentic Workflow — Follow This Order Every Time
 
-- Make the smallest change that satisfies the requirement. Do not rewrite files not mentioned in the task.
-- After every implementation step, run: `npm run lint && npx tsc --noEmit`
-- Never skip TypeScript types. No `any`. No `// @ts-ignore`.
-- Never use inline styles. Use Tailwind utility classes only.
-- Always handle three UI states: loading, error, and empty — not just the happy path.
+Every task follows this sequence without exception:
+
+### Step 1 — Understand the problem
+Before writing any code:
+- Restate the requirement in your own words
+- List what is explicitly in scope
+- List what is out of scope
+- If anything is ambiguous, ask one clarifying question before proceeding
+
+### Step 2 — Identify reusable capabilities
+Before creating anything new:
+- Check `src/components/ui/` for existing primitives
+- Check `src/hooks/` for existing hooks to extend
+- Check `src/lib/` for existing utilities
+- List what can be reused and what must be created fresh
+
+### Step 3 — Reuse or set up skills and agents
+- Use the planner agent to produce an implementation plan
+- Use the scaffold-component skill when building any component
+- Use the scaffold-hook skill when building any custom hook
+- Use the verify skill after every implementation step
+- Only prompt directly for small, one-off fixes that don't fit a skill
+
+### Step 4 — Create a short implementation plan
+Write a bullet list of every file to create or modify, in order.
+Get confirmation before starting if the plan touches more than 3 files.
+Always follow this order: types → hooks → components → page wiring → tests
+
+### Step 5 — Implement in small reviewable steps
+- One file at a time
+- Summarise in one line what was added after each file
+- Do not move to the next file until the current one compiles cleanly
+- Never write more than one logical unit before running a check
+
+### Step 6 — Review diffs and decisions
+After completing all files:
+- List every file changed with a one-line summary
+- Flag every decision that wasn't explicitly specified and explain why you made it
+
+### Step 7 — Run verification gates
+Run the verify skill. Fix every failure before proceeding.
+Do not accumulate failures across steps.
+
+### Step 8 — Fix issues found by verification
+Fix immediately. Re-run the failed check. Then re-run the full verify skill.
+
+### Step 9 — Final quality gate
+Run `npm run build` as the hard final gate.
+A task is NOT complete until the build passes clean.
+
+### Step 10 — Explain the solution
+After completing the task provide:
+- What was built and why each file exists
+- Which parts are reusable for future features
+- What tradeoffs were made
+- What would change if the feature needed to scale or be extended
 
 ---
 
@@ -19,137 +69,135 @@
 
 ```
 src/
-  app/           # Next.js App Router pages and layouts
+  app/              # Next.js App Router — pages and layouts only
   components/
-    ui/          # Dumb, reusable primitives (Button, Card, Badge, Spinner)
-    sections/    # Page-level composed sections
-  hooks/         # Custom React hooks (useNotifications, useFetch, etc.)
-  lib/           # Utilities, constants, API helpers
-  types/         # Shared TypeScript interfaces and types
+    ui/             # Dumb, reusable primitives — no business logic
+    sections/       # Page-level composed sections
+    layout/         # Navbar, Footer, Sidebar
+  hooks/            # Custom React hooks — all state and data logic lives here
+  lib/              # Utilities, mock data, API helpers, constants
+  types/            # All TypeScript interfaces and types
 ```
 
 ---
 
 ## Component Rules
 
-- Every component gets its own file. Name matches the export: `NotificationItem.tsx` exports `NotificationItem`.
-- Props interface defined at the top of the file, named `[ComponentName]Props`.
-- Server Components by default. Add `"use client"` only when the component uses state, effects, or browser APIs.
-- Do not put business logic inside JSX. Extract to a hook or helper first.
-- Prefer composition over long prop lists. If a component has more than 6 props, reconsider the design.
+- One component per file. Filename matches the export.
+- Props interface at the top of the file, named `[ComponentName]Props`.
+- Server Component by default. Add `"use client"` only when using: useState, useEffect, useRef, event handlers, or browser APIs.
+- No business logic inside JSX. Extract to a hook or helper first.
+- If a component has more than 6 props, reconsider the design.
+- Check `src/components/ui/` before creating any new primitive.
 
 ---
 
 ## TypeScript Rules
 
-- Define all data shapes in `src/types/`. Import from there, never re-declare inline.
+- No `any`. No `// @ts-ignore`. No implicit types.
+- All data shapes defined in `src/types/` — never inline.
 - Use `interface` for object shapes, `type` for unions and primitives.
-- Async functions must have explicit return types.
-- API responses must be typed before use — no implicit `any` from `fetch`.
-
-Example type pattern:
-```ts
-// src/types/notification.ts
-export interface Notification {
-  id: string
-  title: string
-  message: string
-  isRead: boolean
-  isArchived: boolean
-  createdAt: string
-}
-
-export type NotificationFilter = 'all' | 'unread' | 'archived'
-```
+- All async functions have explicit return types.
+- API responses typed before use.
 
 ---
 
-## State Management
+## State Management Rules
 
-- Use `useState` + `useReducer` for local UI state.
-- Extract all state logic into a custom hook: `useNotifications`, `useFilters`, etc.
+- All state logic lives in custom hooks in `src/hooks/` — never in components.
+- Use `useState` for simple, isolated values.
+- Use `useReducer` when there are 3 or more related actions.
 - No prop drilling beyond 2 levels — lift state or use context.
-- Derived values (filtered lists, counts) computed inside the hook, not in JSX.
+- Derived values computed with `useMemo` inside the hook, never in JSX.
 
 ---
 
-## Accessibility (Non-Negotiable)
+## Data and API Rules
 
-- All interactive elements must be keyboard accessible.
+- All mock data lives in `src/lib/mockData.ts`.
+- All fetch logic lives in `src/lib/api.ts` — never fetch directly inside a component.
+- Always simulate async delay (300–500ms) in mocks to exercise loading states.
+- Use a shared `useFetch` hook or similar abstraction for consistent loading/error/data handling.
+
+---
+
+## UI State Rules — Non-Negotiable
+
+Every component that renders async data must handle all four states:
+- **Loading** — spinner, skeleton, or loading text. Never blank.
+- **Empty** — helpful message explaining why it's empty. Never blank.
+- **Error** — clear error message with retry if possible.
+- **Populated** — the happy path.
+
+---
+
+## Form and Validation Rules
+
+- Controlled inputs only — no uncontrolled refs for form state.
+- Validate on submit and on blur, not on every keystroke.
+- Show inline error messages below each field, not in an alert.
+- Disable submit button while submitting. Show loading state.
+- Never clear a form on error — preserve user input.
+
+---
+
+## Accessibility Rules — Non-Negotiable
+
+- All interactive elements keyboard accessible via Tab.
 - Icon-only buttons must have `aria-label`.
-- Use semantic HTML: `<button>` for actions, `<nav>` for navigation, `<ul>/<li>` for lists.
-- Dynamic content changes must use `aria-live="polite"` where appropriate.
-- Never use `div` or `span` as a clickable element.
+- Semantic HTML: `<button>` for actions, `<nav>` for navigation, `<ul>/<li>` for lists, `<form>` for forms.
+- Dynamic content updates must use `aria-live="polite"`.
+- Never put `onClick` on `<div>` or `<span>`.
+- Form inputs must have associated `<label>` elements.
+- Error messages linked to inputs via `aria-describedby`.
 
 ---
 
 ## Styling Rules
 
-- Mobile-first. Base styles for mobile, `md:` and `lg:` for larger screens.
-- Use Tailwind's design tokens for spacing, color, and typography — no magic numbers.
-- Dark mode support via `dark:` variants where relevant.
-- Consistent spacing scale: use `4, 8, 12, 16, 24, 32` (Tailwind: `p-1` through `p-8`).
+- Mobile-first. Base classes for mobile, `md:` and `lg:` for larger screens.
+- Tailwind utility classes only — no inline styles, no CSS modules unless specified.
+- Consistent spacing scale: `p-2, p-3, p-4, p-6, p-8` only — no arbitrary values.
+- Dark mode support via `dark:` variants.
 
 ---
 
-## Data & API
+## Testing Rules
 
-- All mock data lives in `src/lib/mockData.ts`.
-- All fetch logic lives in `src/lib/api.ts` — never fetch directly inside a component.
-- Use a `useFetch` hook or similar abstraction to handle loading/error/data states uniformly.
-- Simulate async delay (300–500ms) in mocks to test loading states.
-
-Mock data helper pattern:
-```ts
-// src/lib/mockData.ts
-export const mockNotifications: Notification[] = [
-  { id: '1', title: 'Payment received', message: '...', isRead: false, isArchived: false, createdAt: new Date().toISOString() },
-  // ...
-]
-```
+- Tests live in `__tests__/` next to the file being tested, or as `ComponentName.test.tsx`.
+- Test behaviour, not implementation — test what the user sees and does.
+- Every hook gets at least one test for its core action.
+- Every component gets at least one test for: render, loading state, empty state, error state.
+- Use React Testing Library. No Enzyme.
 
 ---
 
-## Verification Gates
-
-Run these before marking any task complete:
+## Verification Gates — Run After Every Step
 
 ```bash
-# 1. Type check
+# Type check — run after every file
 npx tsc --noEmit
 
-# 2. Lint
+# Lint — run after every file
 npm run lint
 
-# 3. Build check
-npm run build
+# Tests — run after implementing a feature
+npm run test
 
-# 4. Manual browser check
-# - Does it render correctly on mobile (375px)?
-# - Does loading state show?
-# - Does empty state show?
-# - Does error state show?
-# - Are all interactive elements keyboard accessible?
+# Build — run only before final sign-off
+npm run build
 ```
 
-A task is NOT complete until all four gates pass.
+All gates must pass before a task is complete.
+Fix failures immediately — never accumulate them.
 
 ---
 
-## When Adding a New Feature (Extension Requirements)
+## Ground Rules
 
-1. Update types in `src/types/` first.
-2. Update the relevant custom hook.
-3. Update the component.
-4. Run verification gates.
-5. Do not touch unrelated files.
-
----
-
-## What NOT to Do
-
-- Do not use `useEffect` for data that can be derived from existing state.
-- Do not create new components for one-off styling — use Tailwind classes inline.
-- Do not leave `console.log` statements in committed code.
-- Do not install new packages without asking first.
-- Do not generate placeholder/lorem ipsum content — use realistic mock data.
+- Make the smallest change that satisfies the requirement.
+- Do not modify files not mentioned in the current task.
+- Do not install packages without asking first.
+- Do not leave `console.log` in code.
+- Do not use lorem ipsum — use realistic mock data.
+- Do not generate code you cannot explain.
