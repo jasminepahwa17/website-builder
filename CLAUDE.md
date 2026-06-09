@@ -1,5 +1,6 @@
 # Project: Agentic Frontend
 @~/.claude/central.md
+@~/.claude/design.md
 # Stack: Next.js 16, TypeScript, Tailwind CSS
 # Agent: Claude Code
 
