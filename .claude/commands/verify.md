@@ -1,4 +1,7 @@
 # Command: /verify
 
-Run the verify skill from .claude/skills/verify.md
-Report the combined sign-off before allowing /ship to proceed.
+Run the verify skill from .claude/skills/verify.md.
+Verify covers: tsc, lint, build, and browser checklist only.
+Do not run tests here — tests are a separate gate.
+
+Next step after /verify passes: /review

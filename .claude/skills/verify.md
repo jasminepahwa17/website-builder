@@ -10,20 +10,20 @@ any task complete. Run the full checklist every time — do not skip sections.
 Run in this order. Fix failures before moving to the next check.
 
 ```bash
-# 1. Type check — run after every file
+# 1. Type check
 npx tsc --noEmit
 
-# 2. Lint — run after every file
+# 2. Lint
 npm run lint
 
-# 3. Tests — run after completing a feature. skip if no e2e/ tests exist
-npx playwright test
-
-# 4. Build — run before final sign-off only
+# 3. Build
 npm run build
 ```
 
-Zero errors expected on all four. If any fail — fix immediately, do not proceed.
+Zero errors expected on all three. If any fail — fix immediately, do not proceed.
+
+Tests are NOT part of verify. They run only when the reviewer agent flags
+TESTS REQUIRED: yes. Do not run `npm test` or `npx playwright test` here.
 
 ---
 

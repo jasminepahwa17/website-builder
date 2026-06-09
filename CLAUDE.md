@@ -45,14 +45,21 @@ After completing all files:
 - List every file changed with a one-line summary
 - Flag every decision that wasn't explicitly specified and explain why you made it
 
-### Step 7 — Run verification gates
-Run the verify skill. Fix every failure before proceeding.
-Do not accumulate failures across steps.
+### Step 7 — Verify
+Run the verify skill (tsc + lint + build + browser checklist).
+Fix every failure before proceeding. Do not accumulate failures.
 
-### Step 8 — Fix issues found by verification
-Fix immediately. Re-run the failed check. Then re-run the full verify skill.
+### Step 8 — Review
+Run the reviewer agent against the diff.
+If verdict is BLOCKED — fix every blocker and re-run review before proceeding.
+The reviewer will also output a TESTS REQUIRED flag.
 
-### Step 9 — Final quality gate
+### Step 9 — Test gate
+If the reviewer flagged TESTS REQUIRED: yes — run the test-strategy skill.
+Write the minimum tests identified, run them, fix failures, re-run.
+If the reviewer flagged TESTS REQUIRED: no — skip this step entirely.
+
+### Step 10 — Final build check
 Run `npm run build` as the hard final gate.
 A task is NOT complete until the build passes clean.
 
@@ -201,32 +208,60 @@ Every component that renders async data must handle all four states:
 
 ## Testing Rules
 
-- Playwright e2e tests are optional
-- If written, tests live in `e2e/[feature-name].spec.ts`.
-- Test behaviour the user sees — not implementation details, internal state, or component props.
-- Use role-based selectors in order: `getByRole` → `getByLabel` → `getByText` → `getByPlaceholder`.
-- Never use CSS selectors or raw element selectors.
-- Run with `--headed` so the browser is visible.
+Tests are a risk gate, not a default step. The reviewer agent decides whether
+tests are needed based on the diff. Do not write tests unless flagged.
+
+### Write tests when the diff contains:
+- New business logic or branching conditions
+- New or modified custom hooks
+- State management changes
+- Form validation logic
+- API integration
+- Bug fixes (test the scenario that was broken)
+- Any logic with more than one code path
+
+### Skip tests when the diff contains only:
+- Styling or CSS changes
+- Copy or content changes
+- Layout or spacing tweaks
+- Icon or asset swaps
+- Refactors with no behaviour change
+- Documentation updates
+
+### When tests are written:
+- Unit tests live in `src/__tests__/[feature].test.ts`
+- E2E tests live in `e2e/[feature-name].spec.ts`
+- Test behaviour the user sees — not implementation details or internal state
+- Use role-based selectors: `getByRole` → `getByLabel` → `getByText` → `getByPlaceholder`
+- Never use CSS selectors or raw element selectors
+
+### E2E — only run when:
+- Routing changed
+- Auth flow changed
+- Form submission flow changed
+- Critical user journey changed
+
+Never run E2E for styling, copy, or simple component changes.
 
 ---
 
-## Verification Gates — Run After Every Step
+## Verification Gates
 
+### Verify — always run, run after every file during implementation
 ```bash
-# Type check — run after every file
-npx tsc --noEmit
-
-# Lint — run after every file
-npm run lint
-
-# Playwright e2e — optional, run if tests were written
-npx playwright test
-
-# Build — run only before final sign-off
-npm run build
+npx tsc --noEmit   # type check
+npm run lint       # lint
+npm run build      # final build check before sign-off
 ```
 
-All gates must pass before a task is complete.
+### Test — run only when reviewer flags TESTS REQUIRED: yes
+```bash
+npm test                  # unit tests
+npx playwright test       # e2e — only when routing, auth, or critical journey changed
+```
+
+All verify gates must pass before proceeding to review.
+All test gates must pass before proceeding to ship.
 Fix failures immediately — never accumulate them.
 
 ---

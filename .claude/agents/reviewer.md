@@ -50,9 +50,22 @@ Checklist:
 Which parts of this implementation could be reused for future features?
 Which parts are too tightly coupled to this specific feature?
 
-### 5. Verdict
+### 5. Tests required
+Assess the diff against the testing rules in CLAUDE.md and output exactly one of:
+
+> TESTS REQUIRED: yes
+> Reason: [one line — what logic or behaviour warrants testing]
+> Recommended: [unit / integration / e2e — pick the minimum set]
+
+> TESTS REQUIRED: no
+> Reason: [one line — why tests add no value here]
+
+E2E should only be recommended if routing, auth, form submission flow,
+or a critical user journey changed.
+
+### 6. Verdict
 Either:
-> APPROVED — no blockers found. Ready for verify skill.
+> APPROVED — no blockers found. Proceed to /test if flagged, else /ship.
 
 Or:
 > BLOCKED — [N] blockers must be resolved before proceeding.

@@ -9,7 +9,9 @@ git diff HEAD
 
 Pass the full diff to the reviewer agent.
 
-If the verdict is BLOCKED — stop. Do not proceed to /verify until every
-BLOCKER listed in the report is fixed and /review is re-run clean.
+If the verdict is BLOCKED — stop. Fix every blocker and re-run /review before proceeding.
 
-If the verdict is APPROVED — proceed to /verify.
+If the verdict is APPROVED:
+- Check the TESTS REQUIRED flag in the report.
+- If TESTS REQUIRED: yes — next step is /test.
+- If TESTS REQUIRED: no — next step is /ship.
