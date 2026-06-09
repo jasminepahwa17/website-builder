@@ -97,8 +97,17 @@ npm test                   # unit and integration
 npx playwright test        # e2e only if written
 ```
 
-Fix every failure before proceeding. Do not skip or comment out failing tests.
-Re-run after every fix to confirm no regressions.
+When a test fails, identify what the fix touches before continuing:
+
+**Test file only changed** (wrong assertion, missing mock, wrong selector)
+→ Fix the test, re-run. No re-review needed.
+
+**Production code changed** (bug exposed by test, logic corrected)
+→ Stop. Run /verify → /review on the new diff first.
+→ Only re-run /test after /review returns APPROVED again.
+
+Do not skip or comment out failing tests.
+Do not proceed to /ship with any failure unresolved.
 
 ---
 
