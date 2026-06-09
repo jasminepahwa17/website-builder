@@ -1,6 +1,6 @@
 # Skill: verify
 
-Use this skill after every implementation step and always before marking
+Use this skill after completing a feature and always before marking
 any task complete. Run the full checklist every time — do not skip sections.
 
 ---
@@ -16,8 +16,8 @@ npx tsc --noEmit
 # 2. Lint — run after every file
 npm run lint
 
-# 3. Tests — run after completing a feature
-npm run test
+# 3. Tests — run after completing a feature. skip if no e2e/ tests exist
+npx playwright test
 
 # 4. Build — run before final sign-off only
 npm run build
@@ -94,4 +94,4 @@ Do not move to the next task until every check passes.
 
 Only output this line when every applicable check above passes:
 
-> Verification complete. TypeScript ✓ — Lint ✓ — Tests ✓ — Build ✓ — Browser ✓ — Ready.
+> Verification complete. TypeScript ✓ — Lint ✓ — Tests ✓ / N/A — Build ✓ — Browser ✓ — Ready.

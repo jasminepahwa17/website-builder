@@ -211,3 +211,4 @@ return {
 - [ ] No business logic in components — all in the hook
 - [ ] No `any` types
 - [ ] `npx tsc --noEmit` passes
+- [ ] `npm run lint` passes

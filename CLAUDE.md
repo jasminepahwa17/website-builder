@@ -26,7 +26,7 @@ Before creating anything new:
 - Use the planner agent to produce an implementation plan
 - Use the scaffold-component skill when building any component
 - Use the scaffold-hook skill when building any custom hook
-- Use the verify skill after every implementation step
+- Use the verify skill after completing a feature
 - Only prompt directly for small, one-off fixes that don't fit a skill
 
 ### Step 4 — Create a short implementation plan
@@ -112,6 +112,43 @@ src/
 
 ---
 
+## Global State Rules
+
+### When to use global state
+Reach for global state only when all of the following are true:
+- The value is read or written by components in more than one branch of the tree
+- Prop drilling to reach a consumer would exceed 2 levels
+- Lifting to the nearest common ancestor is impractical
+
+When none of the above apply, keep state local in a hook. Do not use
+global state for UI-only state (panel open/closed, hover, tooltip) —
+that stays local always.
+
+### Choosing a solution
+Assess before choosing. In order of preference:
+
+1. **React Context + useReducer** — use when updates are low-frequency
+   and consumers are few. No package required.
+
+2. **Dedicated state library** — use when any of the following apply:
+   - Updates are high-frequency (selection, drag, live input)
+   - Many independent consumers need different slices of the same state
+   - Time-travel (undo/redo) is a requirement
+
+   If a library is needed: propose the choice with a one-line justification
+   and wait for approval before installing.
+
+Never choose a library to avoid thinking about state shape.
+
+### Structure — applies regardless of solution chosen
+- Global state lives in `src/store/`. One file per domain (e.g. `editorStore.ts`, `pagesStore.ts`).
+- Never import a store or context directly in a component. Always wrap
+  in a hook in `src/hooks/` that returns only what the component needs.
+- Mutations live inside the store or reducer — never in components or hooks.
+- Components subscribe to the smallest slice they need — not the whole store.
+
+---
+
 ## Data and API Rules
 
 - All mock data lives in `src/lib/mockData.ts`.
@@ -164,11 +201,12 @@ Every component that renders async data must handle all four states:
 
 ## Testing Rules
 
-- Tests live in `__tests__/` next to the file being tested, or as `ComponentName.test.tsx`.
-- Test behaviour, not implementation — test what the user sees and does.
-- Every hook gets at least one test for its core action.
-- Every component gets at least one test for: render, loading state, empty state, error state.
-- Use React Testing Library. No Enzyme.
+- Playwright e2e tests are optional
+- If written, tests live in `e2e/[feature-name].spec.ts`.
+- Test behaviour the user sees — not implementation details, internal state, or component props.
+- Use role-based selectors in order: `getByRole` → `getByLabel` → `getByText` → `getByPlaceholder`.
+- Never use CSS selectors or raw element selectors.
+- Run with `--headed` so the browser is visible.
 
 ---
 
@@ -181,8 +219,8 @@ npx tsc --noEmit
 # Lint — run after every file
 npm run lint
 
-# Tests — run after implementing a feature
-npm run test
+# Playwright e2e — optional, run if tests were written
+npx playwright test
 
 # Build — run only before final sign-off
 npm run build

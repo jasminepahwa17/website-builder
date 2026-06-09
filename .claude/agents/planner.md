@@ -70,10 +70,12 @@ List specific accessibility requirements for this feature:
 - Whether any forms need aria-describedby on error fields
 
 ### 9. Test plan
-List the minimum tests needed:
-- One test per hook action
-- One test per UI state per component (loading, empty, error, populated)
+Tests are optional. Only include this section if e2e tests will be written.
+If writing tests, list the minimum Playwright e2e tests needed:
+- One test per UI state the user can see (loading, empty, error, populated)
 - One test per user interaction (click, submit, filter, sort)
+- One test for keyboard navigation if new interactive elements are added
+Do not plan unit tests for hooks or internal state — test only what the user sees.
 
 ### 10. Reusability note
 List any part of this implementation reusable for future features.
