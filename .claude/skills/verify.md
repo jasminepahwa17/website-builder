@@ -10,11 +10,11 @@ any task complete. Run the full checklist every time — do not skip sections.
 Run in this order. Fix failures before moving to the next check.
 
 ```bash
-# 1. Type check
-npx tsc --noEmit
+# 1. Type check — use local tsc, not npx (avoids downloading wrong package)
+node_modules/.bin/tsc --noEmit
 
-# 2. Lint
-npm run lint
+# 2. Lint — use ESLint directly
+node_modules/.bin/eslint src/
 
 # 3. Build
 npm run build

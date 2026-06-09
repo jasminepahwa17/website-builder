@@ -5,6 +5,30 @@ Do not run this skill speculatively or by default.
 
 ---
 
+## Step 0 — Verify test infrastructure is installed
+
+Before writing a single test, confirm a test runner exists:
+
+```bash
+npm test -- --passWithNoTests 2>&1 | head -5
+```
+
+If the output contains "no test runner", "command not found", or similar — **stop**.
+Install the minimum required packages before continuing:
+
+```bash
+# Jest + Testing Library (recommended for this project)
+npm install --save-dev jest jest-environment-jsdom @testing-library/react @testing-library/jest-dom ts-jest @types/jest
+```
+
+Then add to `package.json` scripts:
+```json
+"test": "jest"
+```
+
+And add `jest.config.ts` at the project root. Only proceed to Step 1 once `npm test` runs without a configuration error.
+---
+
 ## Step 1 — Read the reviewer's output
 
 Pull the TESTS REQUIRED section from the /review output:

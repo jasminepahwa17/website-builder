@@ -37,7 +37,9 @@ Always follow this order: types → hooks → components → page wiring → tes
 ### Step 5 — Implement in small reviewable steps
 - One file at a time
 - Summarise in one line what was added after each file
-- Do not move to the next file until the current one compiles cleanly
+- After each file, run the per-file gate from `/build` before continuing:
+  1. `node_modules/.bin/tsc --noEmit` — zero errors
+  2. Quick CLAUDE.md check: state in hook? no logic in JSX? no arbitrary Tailwind values? correct `"use client"`?
 - Never write more than one logical unit before running a check
 
 ### Step 6 — Review diffs and decisions
@@ -76,15 +78,57 @@ After completing the task provide:
 
 ```
 src/
-  app/              # Next.js App Router — pages and layouts only
+  app/                        # Next.js App Router — routes and layouts only
+    (marketing)/              # Route group — shared layout, no URL segment
+    (dashboard)/              # Route group — shared layout, no URL segment
+      [feature]/              # One folder per route (e.g. notifications/, settings/)
+        page.tsx
+    layout.tsx                # Root layout
+    globals.css
+
   components/
-    ui/             # Dumb, reusable primitives — no business logic
-    sections/       # Page-level composed sections
-    layout/         # Navbar, Footer, Sidebar
-  hooks/            # Custom React hooks — all state and data logic lives here
-  lib/              # Utilities, mock data, API helpers, constants
-  types/            # All TypeScript interfaces and types
+    ui/                       # Generic, reusable primitives — no domain knowledge
+                              # e.g. Button, Spinner, Input, Modal
+    layout/                   # App-wide structural elements — Navbar, Sidebar, Footer
+    [feature]/                # Feature-specific components grouped by domain
+                              # e.g. notifications/, settings/, billing/
+
+  hooks/
+    [feature]/                # Feature-specific hooks grouped by domain
+                              # e.g. notifications/useNotifications.ts
+    shared/                   # Hooks reused across features — useFetch, useDebounce
+
+  lib/
+    api/                      # Fetch helpers — one file per domain (notifications.ts)
+    utils/                    # Pure functions — one file per concern (formatTimestamp.ts)
+    mockData/                 # Mock data — one file per domain
+    constants.ts              # App-wide constants
+
+  types/
+    [domain].ts               # One file per domain (notification.ts, user.ts)
+    index.ts                  # Re-exports only — never define types here directly
+
+  store/                      # Global state — one file per domain
 ```
+
+### Structure rules
+
+**Group by feature domain, not by type.** Once a feature has more than one file, group its components, hooks, and types together by domain folder rather than scattering them across flat type-based folders. This keeps related code co-located and makes features easy to find and delete cleanly.
+
+| What you're creating | Where it goes |
+|---|---|
+| Generic primitive (Button, Spinner, Input) | `src/components/ui/` |
+| App chrome (Navbar, Sidebar, Footer) | `src/components/layout/` |
+| Feature-specific component | `src/components/[feature]/` |
+| Feature-specific hook | `src/hooks/[feature]/` |
+| Hook used by 2+ features | `src/hooks/shared/` |
+| Types for one domain | `src/types/[domain].ts` |
+| Fetch logic for one domain | `src/lib/api/[domain].ts` |
+| Mock data for one domain | `src/lib/mockData/[domain].ts` |
+| Pure utility function | `src/lib/utils/[concern].ts` |
+| Route page | `src/app/(group)/[feature]/page.tsx` |
+
+**Create a feature folder when** a feature has 2 or more components, or 2 or more hooks. A single-file feature can sit directly in `ui/` or `hooks/` until it grows.
 
 ---
 
@@ -95,7 +139,7 @@ src/
 - Server Component by default. Add `"use client"` only when using: useState, useEffect, useRef, event handlers, or browser APIs.
 - No business logic inside JSX. Extract to a hook or helper first.
 - If a component has more than 6 props, reconsider the design.
-- Check `src/components/ui/` before creating any new primitive.
+- Check `src/components/ui/` before creating a new generic primitive. Feature-specific components go in `src/components/[feature]/`, not `ui/`.
 
 ---
 
@@ -211,6 +255,12 @@ Every component that renders async data must handle all four states:
 Tests are a risk gate, not a default step. The reviewer agent decides whether
 tests are needed based on the diff. Do not write tests unless flagged.
 
+### Test infrastructure — install before building the first feature
+The project must have a test runner configured before any feature is built.
+If `npm test` errors with "no test runner" or "command not found" — install it first.
+Recommended: `jest jest-environment-jsdom @testing-library/react @testing-library/jest-dom ts-jest @types/jest`
+Do not wait until `/test` is reached to discover this is missing.
+
 ### Write tests when the diff contains:
 - New business logic or branching conditions
 - New or modified custom hooks
@@ -249,9 +299,9 @@ Never run E2E for styling, copy, or simple component changes.
 
 ### Verify — always run, run after every file during implementation
 ```bash
-npx tsc --noEmit   # type check
-npm run lint       # lint
-npm run build      # final build check before sign-off
+node_modules/.bin/tsc --noEmit      # type check — use local tsc, not npx
+node_modules/.bin/eslint src/       # lint — next lint is unreliable in Next.js 16
+npm run build                       # final build check before sign-off
 ```
 
 ### Test — run only when reviewer flags TESTS REQUIRED: yes

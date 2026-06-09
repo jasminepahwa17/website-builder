@@ -34,16 +34,46 @@ Examples of good clarifying questions:
 
 ### 3. New types needed
 List every TypeScript interface or type to create or modify.
-One line per type describing its purpose. Include file path.
+One line per type describing its purpose. Include the full file path.
+
+File path rules:
+- Types for a single domain → `src/types/[domain].ts` (e.g. `src/types/notification.ts`)
+- Types shared across domains → `src/types/index.ts` (re-export only — define in the domain file)
+- Never add types inline in component or hook files
 
 ### 4. New hooks needed
 List every custom hook to create or modify.
-One line describing its responsibility. Include file path.
+One line describing its responsibility. Include the full file path.
 Note whether to use useState or useReducer and why.
+
+File path rules:
+- Hook used only by this feature → `src/hooks/[feature]/useHookName.ts`
+- Hook reused across features → `src/hooks/shared/useHookName.ts`
 
 ### 5. New components needed
 List every component to create or modify.
-For each: type (ui / sections / layout), one-line responsibility, file path.
+For each: category, one-line responsibility, full file path.
+
+File path rules:
+- Generic reusable primitive (no domain knowledge) → `src/components/ui/ComponentName.tsx`
+- App chrome (Navbar, Sidebar, Footer) → `src/components/layout/ComponentName.tsx`
+- Feature-specific component → `src/components/[feature]/ComponentName.tsx`
+- Route page → `src/app/(group)/[feature]/page.tsx`
+
+If the feature has 2 or more components, they must go in a feature folder — not flat in `ui/`.
+
+### 5a. State ownership map
+This section is mandatory whenever a feature has more than one component.
+
+For every hook created or used, answer:
+- Which single component calls this hook? (the owner)
+- Which components receive data from it as props? (the consumers)
+- Does any state need to be read or written by components in more than one branch of the tree?
+
+If shared state crosses a component boundary, write the full prop-flow chain explicitly:
+> `ParentComponent` calls `useX()` → passes `value` and `onAction` → `ChildA` (read-only) and `ChildB` (calls action)
+
+Flag immediately if two components would independently call the same hook — this creates two separate state instances and must be resolved in the plan, not discovered mid-build.
 
 ### 6. Implementation order
 Numbered list. Strict order:
